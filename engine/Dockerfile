@@ -17,4 +17,19 @@ RUN dotnet publish "Kogase.Engine.csproj" -c Release -o /app/publish /p:UseAppHo
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Kogase.Engine.dll"] 
+
+# Create a script to check database connection
+RUN echo '#!/bin/sh\n\
+echo "Waiting for PostgreSQL to be ready..."\n\
+while ! nc -z postgres 5432; do\n\
+  echo "PostgreSQL is unavailable - sleeping"\n\
+  sleep 1\n\
+done\n\
+echo "PostgreSQL is up - starting app"\n\
+exec dotnet Kogase.Engine.dll\n' > /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
+
+# Add netcat for the connection check
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["/app/entrypoint.sh"] 

@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using Kogase.Engine.Data;
 using Kogase.Engine.Models;
 using System.Text.Json;
+using Polly;
+using Npgsql;
 
 namespace Kogase.Engine.Services
 {
@@ -18,6 +20,7 @@ namespace Kogase.Engine.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MetricAggregationService> _logger;
         private readonly TimeSpan _interval = TimeSpan.FromHours(1);
+        private readonly Polly.Retry.AsyncRetryPolicy _retryPolicy;
 
         public MetricAggregationService(
             IServiceProvider serviceProvider,
@@ -25,17 +28,38 @@ namespace Kogase.Engine.Services
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            
+            // Define a retry policy for transient database errors
+            _retryPolicy = Policy
+                .Handle<NpgsqlException>()
+                .Or<InvalidOperationException>()
+                .WaitAndRetryAsync(
+                    retryCount: 5,
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    onRetry: (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning(
+                            "Retry {RetryCount} for {Context} after {Delay}s due to: {Message}",
+                            retryCount,
+                            context?.OperationKey ?? "database operation",
+                            timeSpan.TotalSeconds,
+                            exception.Message);
+                    });
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("MetricAggregationService started");
 
+            // Initial delay to allow the application to fully start up
+            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    await AggregateMetricsAsync();
+                    // Use the retry policy when aggregating metrics
+                    await _retryPolicy.ExecuteAsync(async () => await AggregateMetricsAsync());
                     
                     // Wait for the next interval
                     await Task.Delay(_interval, stoppingToken);
@@ -59,6 +83,13 @@ namespace Kogase.Engine.Services
             
             try
             {
+                // Test database connectivity before proceeding
+                bool isConnected = await TestDatabaseConnectionAsync(dbContext);
+                if (!isConnected)
+                {
+                    throw new InvalidOperationException("Unable to connect to the database after multiple attempts");
+                }
+                
                 // Get all active projects
                 var projects = await dbContext.Projects.ToListAsync();
                 
@@ -73,6 +104,21 @@ namespace Kogase.Engine.Services
             {
                 _logger.LogError(ex, "Error during metrics aggregation");
                 throw;
+            }
+        }
+        
+        private async Task<bool> TestDatabaseConnectionAsync(KogaseDbContext dbContext)
+        {
+            try
+            {
+                // Run a simple query to check connection
+                await dbContext.Database.CanConnectAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Database connection test failed");
+                return false;
             }
         }
 

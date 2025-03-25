@@ -6,12 +6,19 @@ using Kogase.Engine.Data;
 using Kogase.Engine.Services;
 using Kogase.Engine.Middleware;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<KogaseDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorCodesToAdd: null));
+});
 
 // Register services
 builder.Services.AddScoped<TokenService>();
@@ -128,6 +135,46 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Migrate and seed the database during startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<KogaseDbContext>();
+        
+        // Wait for database with exponential backoff
+        var retryPolicy = Policy
+            .Handle<Exception>()
+            .WaitAndRetry(
+                retryCount: 10,
+                sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                onRetry: (exception, timeSpan, retryCount, context) =>
+                {
+                    Console.WriteLine($"Retry {retryCount} after {timeSpan.TotalSeconds} seconds due to: {exception.Message}");
+                });
+
+        retryPolicy.Execute(() => 
+        {
+            // Ensure database is created
+            context.Database.EnsureCreated();
+            
+            // Apply pending migrations
+            if (context.Database.GetPendingMigrations().Any())
+            {
+                context.Database.Migrate();
+            }
+        });
+        
+        Console.WriteLine("Database is ready!");
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or initializing the database.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
