@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kogase.Engine.Data;
 using Kogase.Engine.Models;
+using Kogase.Engine.Models.DTOs;
 
 namespace Kogase.Engine.Controllers
 {
@@ -73,13 +74,13 @@ namespace Kogase.Engine.Controllers
             // Get results
             var metrics = await query
                 .OrderBy(m => m.PeriodStart)
-                .Select(m => new
+                .Select(m => new MetricResponse
                 {
-                    m.Id,
-                    m.MetricType,
-                    m.Period,
-                    m.PeriodStart,
-                    m.Value,
+                    Id = m.Id,
+                    MetricType = m.MetricType,
+                    Period = m.Period,
+                    PeriodStart = m.PeriodStart,
+                    Value = m.Value,
                     Dimensions = m.Dimensions
                 })
                 .ToListAsync();
@@ -88,7 +89,7 @@ namespace Kogase.Engine.Controllers
         }
 
         [HttpGet("events")]
-        public async Task<IActionResult> GetEvents([FromQuery] int projectId, [FromQuery] string? eventType = null, [FromQuery] string? eventName = null, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int limit = 100, [FromQuery] int offset = 0)
+        public async Task<IActionResult> GetEvents([FromQuery] int projectId, [FromQuery] string? eventType = null, [FromQuery] string? eventName = null, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
         {
             // Check if user has access to this project
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -137,42 +138,40 @@ namespace Kogase.Engine.Controllers
 
             // Get count for pagination
             var totalCount = await query.CountAsync();
+            
+            // Calculate offset
+            int offset = (page - 1) * pageSize;
 
             // Apply pagination
             var events = await query
                 .OrderByDescending(e => e.Timestamp)
                 .Skip(offset)
-                .Take(limit)
-                .Select(e => new
+                .Take(pageSize)
+                .Select(e => new EventItem
                 {
-                    e.Id,
-                    e.EventType,
-                    e.EventName,
-                    e.Timestamp,
+                    Id = e.Id,
+                    EventType = e.EventType,
+                    EventName = e.EventName,
                     Parameters = e.Parameters,
-                    Device = e.Device != null ? new
-                    {
-                        e.Device.DeviceId,
-                        e.Device.Platform,
-                        e.Device.OsVersion,
-                        e.Device.AppVersion,
-                        e.Device.Country
-                    } : null
+                    Timestamp = e.Timestamp,
+                    DeviceId = e.Device != null ? e.Device.DeviceId : null
                 })
                 .ToListAsync();
 
             // Return with pagination info
-            return Ok(new
+            var response = new EventsResponse
             {
-                totalCount,
-                offset,
-                limit,
-                data = events
-            });
+                Events = events,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("devices")]
-        public async Task<IActionResult> GetDevices([FromQuery] int projectId, [FromQuery] string? platform = null, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int limit = 100, [FromQuery] int offset = 0)
+        public async Task<IActionResult> GetDevices([FromQuery] int projectId, [FromQuery] string? platform = null, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
         {
             // Check if user has access to this project
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -204,43 +203,105 @@ namespace Kogase.Engine.Controllers
 
             if (from.HasValue)
             {
-                query = query.Where(d => d.FirstSeen >= from.Value);
+                query = query.Where(d => d.FirstSeen >= from.Value || d.LastSeen >= from.Value);
             }
 
             if (to.HasValue)
             {
-                query = query.Where(d => d.FirstSeen <= to.Value);
+                query = query.Where(d => d.FirstSeen <= to.Value || d.LastSeen <= to.Value);
             }
 
             // Get count for pagination
             var totalCount = await query.CountAsync();
+            
+            // Calculate offset
+            int offset = (page - 1) * pageSize;
 
             // Apply pagination
             var devices = await query
                 .OrderByDescending(d => d.LastSeen)
                 .Skip(offset)
-                .Take(limit)
-                .Select(d => new
+                .Take(pageSize)
+                .Select(d => new DeviceItem
                 {
-                    d.Id,
-                    d.DeviceId,
-                    d.Platform,
-                    d.OsVersion,
-                    d.AppVersion,
-                    d.FirstSeen,
-                    d.LastSeen,
-                    d.Country
+                    Id = d.Id,
+                    DeviceId = d.DeviceId,
+                    Platform = d.Platform,
+                    OsVersion = d.OsVersion,
+                    AppVersion = d.AppVersion,
+                    Country = d.Country,
+                    FirstSeen = d.FirstSeen,
+                    LastSeen = d.LastSeen
                 })
                 .ToListAsync();
 
             // Return with pagination info
-            return Ok(new
+            var response = new DevicesResponse
             {
-                totalCount,
-                offset,
-                limit,
-                data = devices
-            });
+                Devices = devices,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            return Ok(response);
+        }
+
+        [HttpGet("top-events")]
+        public async Task<IActionResult> GetTopEvents([FromQuery] int projectId, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int limit = 10)
+        {
+            // Check if user has access to this project
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized();
+            }
+            
+            int userId = int.Parse(userIdClaim);
+            string? userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            bool hasAccess = userRole == "Admin" || 
+                            await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId) || 
+                            await _context.ProjectUsers.AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == userId);
+
+            if (!hasAccess)
+            {
+                return Forbid();
+            }
+
+            // Build query
+            var query = _context.Events.Where(e => e.ProjectId == projectId);
+
+            // Apply filters
+            if (from.HasValue)
+            {
+                query = query.Where(e => e.Timestamp >= from.Value);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(e => e.Timestamp <= to.Value);
+            }
+
+            // Group and count events
+            var topEvents = await query
+                .GroupBy(e => new { e.EventType, e.EventName })
+                .Select(g => new EventSummary
+                {
+                    EventType = g.Key.EventType,
+                    EventName = g.Key.EventName,
+                    Count = g.Count()
+                })
+                .OrderByDescending(e => e.Count)
+                .Take(limit)
+                .ToListAsync();
+
+            var response = new TopEventsResponse
+            {
+                Events = topEvents
+            };
+
+            return Ok(response);
         }
     }
 } 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kogase.Engine.Data;
 using Kogase.Engine.Models;
+using Kogase.Engine.Models.DTOs;
 using Kogase.Engine.Services;
 
 namespace Kogase.Engine.Controllers
@@ -45,18 +46,14 @@ namespace Kogase.Engine.Controllers
             {
                 var projects = await _context.Projects
                     .Include(p => p.Owner)
-                    .Select(p => new
+                    .Select(p => new ProjectResponse
                     {
-                        p.Id,
-                        p.Name,
-                        p.CreatedAt,
-                        p.UpdatedAt,
-                        Owner = p.Owner != null ? new
-                        {
-                            p.Owner.Id,
-                            p.Owner.Name,
-                            p.Owner.Email
-                        } : null
+                        Id = p.Id,
+                        Name = p.Name,
+                        ApiKey = p.ApiKey,
+                        CreatedAt = p.CreatedAt,
+                        UpdatedAt = p.UpdatedAt,
+                        OwnerName = p.Owner != null ? p.Owner.Name : "Unknown"
                     })
                     .ToListAsync();
 
@@ -69,18 +66,14 @@ namespace Kogase.Engine.Controllers
                     .Where(p => p.OwnerId == userId || 
                             _context.ProjectUsers.Any(pu => pu.ProjectId == p.Id && pu.UserId == userId))
                     .Include(p => p.Owner)
-                    .Select(p => new
+                    .Select(p => new ProjectResponse
                     {
-                        p.Id,
-                        p.Name,
-                        p.CreatedAt,
-                        p.UpdatedAt,
-                        Owner = p.Owner != null ? new
-                        {
-                            p.Owner.Id,
-                            p.Owner.Name,
-                            p.Owner.Email
-                        } : null
+                        Id = p.Id,
+                        Name = p.Name,
+                        ApiKey = p.ApiKey,
+                        CreatedAt = p.CreatedAt,
+                        UpdatedAt = p.UpdatedAt,
+                        OwnerName = p.Owner != null ? p.Owner.Name : "Unknown"
                     })
                     .ToListAsync();
 
@@ -119,23 +112,21 @@ namespace Kogase.Engine.Controllers
                 return Forbid();
             }
 
-            return Ok(new
+            var projectResponse = new ProjectResponse
             {
-                project.Id,
-                project.Name,
-                project.CreatedAt,
-                project.UpdatedAt,
-                Owner = project.Owner != null ? new
-                {
-                    project.Owner.Id,
-                    project.Owner.Name,
-                    project.Owner.Email
-                } : null
-            });
+                Id = project.Id,
+                Name = project.Name,
+                ApiKey = project.ApiKey,
+                CreatedAt = project.CreatedAt,
+                UpdatedAt = project.UpdatedAt,
+                OwnerName = project.Owner != null ? project.Owner.Name : "Unknown"
+            };
+
+            return Ok(projectResponse);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProject([FromBody] Project projectDto)
+        public async Task<IActionResult> CreateProject([FromBody] ProjectCreateRequest request)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
@@ -150,7 +141,7 @@ namespace Kogase.Engine.Controllers
 
             var project = new Project
             {
-                Name = projectDto.Name,
+                Name = request.Name,
                 OwnerId = userId,
                 ApiKey = apiKey,
                 CreatedAt = DateTime.UtcNow,
@@ -160,14 +151,20 @@ namespace Kogase.Engine.Controllers
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProject), new { id = project.Id }, new
+            // Get owner name for response
+            var owner = await _context.Users.FindAsync(userId);
+            
+            var projectResponse = new ProjectResponse
             {
-                project.Id,
-                project.Name,
-                project.ApiKey,
-                project.CreatedAt,
-                project.UpdatedAt
-            });
+                Id = project.Id,
+                Name = project.Name,
+                ApiKey = project.ApiKey,
+                CreatedAt = project.CreatedAt,
+                UpdatedAt = project.UpdatedAt,
+                OwnerName = owner?.Name ?? "Unknown"
+            };
+
+            return CreatedAtAction(nameof(GetProject), new { id = project.Id }, projectResponse);
         }
 
         [HttpGet("{id}/apikey")]
@@ -198,7 +195,12 @@ namespace Kogase.Engine.Controllers
                 return Forbid();
             }
 
-            return Ok(new { apiKey = project.ApiKey });
+            var response = new ApiKeyResponse
+            {
+                ApiKey = project.ApiKey
+            };
+
+            return Ok(response);
         }
 
         [HttpPost("{id}/apikey")]
@@ -233,9 +235,15 @@ namespace Kogase.Engine.Controllers
             project.ApiKey = _apiKeyService.GenerateApiKey();
             project.UpdatedAt = DateTime.UtcNow;
 
+            _context.Projects.Update(project);
             await _context.SaveChangesAsync();
 
-            return Ok(new { apiKey = project.ApiKey });
+            var response = new ApiKeyResponse
+            {
+                ApiKey = project.ApiKey
+            };
+
+            return Ok(response);
         }
     }
 } 
