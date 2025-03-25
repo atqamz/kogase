@@ -20,6 +20,21 @@ This will start both the API server and a PostgreSQL database. The API will be a
 - http://localhost:8080 (HTTP)
 - https://localhost:8443 (HTTPS)
 
+## API Documentation
+
+The API is documented using Swagger/OpenAPI:
+
+- In development: Available at the root URL (http://localhost:8080 or https://localhost:8443)
+- In production: Available at the /api-docs path (http://localhost:8080/api-docs or https://localhost:8443/api-docs)
+
+The documentation includes:
+- Endpoint descriptions and parameters
+- Authentication methods (JWT Bearer tokens and API Keys)
+- Request/response examples
+- Schema definitions
+
+You can also try out API calls directly from the Swagger UI.
+
 ## Development
 
 ### Running locally

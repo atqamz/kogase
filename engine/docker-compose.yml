@@ -13,6 +13,9 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=kogase;Username=postgres;Password=postgres
     depends_on:
       - postgres
+    labels:
+      - "com.kogase.description=Game Telemetry and Analytics Platform"
+      - "com.kogase.documentation=http://localhost:8080 (API Documentation)"
 
   postgres:
     image: postgres:17-alpine
