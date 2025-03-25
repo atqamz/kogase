@@ -7,6 +7,7 @@ using Kogase.Engine.Services;
 using Kogase.Engine.Middleware;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Polly;
+using Kogase.Engine.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -143,6 +144,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<KogaseDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
         
         // Wait for database with exponential backoff
         var retryPolicy = Policy
@@ -152,22 +154,17 @@ using (var scope = app.Services.CreateScope())
                 sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
                 onRetry: (exception, timeSpan, retryCount, context) =>
                 {
-                    Console.WriteLine($"Retry {retryCount} after {timeSpan.TotalSeconds} seconds due to: {exception.Message}");
+                    logger.LogWarning("Retry {RetryCount} after {Delay}s due to: {Message}", 
+                        retryCount, timeSpan.TotalSeconds, exception.Message);
                 });
 
         retryPolicy.Execute(() => 
         {
-            // Ensure database is created
-            context.Database.EnsureCreated();
-            
-            // Apply pending migrations
-            if (context.Database.GetPendingMigrations().Any())
-            {
-                context.Database.Migrate();
-            }
+            logger.LogInformation("Initializing database");
+            context.Database.SafeMigrate(logger);
         });
         
-        Console.WriteLine("Database is ready!");
+        logger.LogInformation("Database is ready!");
     }
     catch (Exception ex)
     {

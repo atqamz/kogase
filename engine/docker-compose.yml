@@ -11,10 +11,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=kogase;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:80
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     restart: unless-stopped
+    networks:
+      - kogase-network
     labels:
       - "com.kogase.description=Game Telemetry and Analytics Platform"
       - "com.kogase.documentation=http://localhost:8080 (API Documentation)"
@@ -30,12 +32,12 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+    networks:
+      - kogase-network
+
+networks:
+  kogase-network:
+    driver: bridge
 
 volumes:
   postgres-data: 
