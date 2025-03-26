@@ -46,6 +46,11 @@ INSTALL_DIR=${INSTALL_DIR:-./kogase}
 echo "Cloning Kogase repository..."
 git clone "$REPO_URL" "$INSTALL_DIR"
 
+# Initialize submodules recursively
+echo "Initializing submodules..."
+cd "$INSTALL_DIR"
+git submodule update --init --recursive
+
 # Change to the installation directory
 cd "$INSTALL_DIR"
 

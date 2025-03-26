@@ -57,6 +57,12 @@ if ([string]::IsNullOrWhiteSpace($INSTALL_DIR)) {
 Write-Host "Cloning Kogase repository..." -ForegroundColor Green
 git clone $REPO_URL $INSTALL_DIR
 
+# Initialize submodules recursively
+Write-Host "Initializing submodules..." -ForegroundColor Green
+Push-Location $INSTALL_DIR
+git submodule update --init --recursive
+Pop-Location
+
 # Change to the installation directory
 Push-Location $INSTALL_DIR
 
