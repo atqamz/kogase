@@ -80,7 +80,8 @@ namespace Kogase.Editor
             // Create the script if it doesn't exist
             if (!fileExists)
             {
-                string script = @"using UnityEngine;
+                string script = @"
+using UnityEngine;
 using Kogase.Core;
 
 /// <summary>
@@ -97,7 +98,7 @@ public class KogaseAutoInit : MonoBehaviour
         Destroy(gameObject);
     }
 }
-";
+                ";
                 System.IO.File.WriteAllText(autoInitPath, script);
                 AssetDatabase.Refresh();
                 Debug.Log("Auto-initialize script created at " + autoInitPath);

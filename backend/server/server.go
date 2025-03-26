@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kogase/backend/config"
 	"github.com/kogase/backend/controllers"
 	"github.com/kogase/backend/middleware"
 	"github.com/kogase/backend/models"
@@ -20,20 +21,17 @@ import (
 type Server struct {
 	Router *gin.Engine
 	DB     *gorm.DB
+	Config *config.Config
 }
 
 // New creates a new server instance
 func New() (*Server, error) {
-	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "5432")
-	dbUser := getEnv("DB_USER", "postgres")
-	dbPassword := getEnv("DB_PASSWORD", "postgres")
-	dbName := getEnv("DB_NAME", "kogase")
-	dbSSLMode := getEnv("DB_SSLMODE", "disable")
+	// Load configuration from environment
+	cfg := config.NewConfigFromEnv()
 
 	// Database connection
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		dbHost, dbPort, dbUser, dbPassword, dbName, dbSSLMode)
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 
 	// Configure GORM logger
 	newLogger := logger.New(
@@ -65,12 +63,31 @@ func New() (*Server, error) {
 	s := &Server{
 		Router: r,
 		DB:     db,
+		Config: cfg,
 	}
 
 	// Initialize routes
 	s.setupRoutes()
 
 	return s, nil
+}
+
+// NewWithConfig creates a new server with custom configuration (useful for testing)
+func NewWithConfig(db *gorm.DB, cfg *config.Config) *Server {
+	// Set up Gin
+	r := gin.Default()
+
+	// Create a new server
+	s := &Server{
+		Router: r,
+		DB:     db,
+		Config: cfg,
+	}
+
+	// Initialize routes
+	s.setupRoutes()
+
+	return s
 }
 
 // setupRoutes sets up all the routes
@@ -144,9 +161,11 @@ func (s *Server) setupRoutes() {
 
 // Run starts the server
 func (s *Server) Run() error {
-	port := getEnv("PORT", "8080")
-	return s.Router.Run(":" + port)
+	return s.Router.Run(":" + s.Config.Port)
 }
+
+// The helper functions below can stay for backwards compatibility
+// but they should now be used through the config package
 
 // getEnv gets an environment variable or returns a default value
 func getEnv(key, defaultValue string) string {
