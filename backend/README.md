@@ -14,7 +14,7 @@ The Kogase Backend is a Go-based API for game analytics and telemetry data colle
 
 ### Prerequisites
 
-- Go 1.19 or higher
+- Go 1.24 or higher
 - PostgreSQL database
 - Git
 
