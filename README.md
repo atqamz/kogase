@@ -213,4 +213,50 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request 
+5. Open a Pull Request
+
+## Development Environment
+
+This project includes a development setup with hot reloading for both backend and frontend services.
+
+### Requirements
+
+- Docker and Docker Compose
+
+### Running in Development Mode
+
+1. Clone the repository
+2. Start the development environment:
+
+**For Linux/macOS:**
+```bash
+# Make the script executable
+chmod +x dev.sh
+
+# Run the development environment
+./dev.sh
+```
+
+**For Windows (PowerShell):**
+```powershell
+# Run the development environment
+.\dev.ps1
+```
+
+Or manually with Docker Compose:
+
+```bash
+docker-compose -f docker-compose.dev.yaml up --build
+```
+
+### Development Features
+
+- **Backend**: Uses Air for hot reloading Go code. Any changes to your Go files will automatically rebuild and restart the server.
+- **Frontend**: Uses Next.js built-in development server with hot module replacement. Changes to React components and styles are instantly reflected.
+- **Volumes**: Local files are mounted into the containers, ensuring all changes are immediately synced.
+
+### Endpoints
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080/api/v1
+- Swagger UI: http://localhost:8080/swagger/index.html 

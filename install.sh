@@ -62,11 +62,6 @@ chmod +x setup.sh
 echo "
 Installation complete! 🎉
 
-Access Kogase at:
-  - Frontend: http://localhost:3000
-  - Backend API: http://localhost:8080/api/v1
-  - API Documentation: http://localhost:8080/swagger/index.html
-
 To check the health of your installation:
   $ cd $INSTALL_DIR
   $ ./healthcheck.sh
