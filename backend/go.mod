@@ -1,4 +1,4 @@
-module github.com/kogase/backend
+module github.com/atqamz/kogase-backend
 
 go 1.24.1
 

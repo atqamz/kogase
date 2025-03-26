@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/atqamz/kogase-backend/docs" // Import for swagger docs
+	"github.com/atqamz/kogase-backend/server"
 	"github.com/joho/godotenv"
-	"github.com/kogase/backend/server"
 )
 
 // @title Kogase Telemetry API

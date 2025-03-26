@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/atqamz/kogase-backend/middleware"
+	"github.com/atqamz/kogase-backend/models"
+	"github.com/atqamz/kogase-backend/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/kogase/backend/middleware"
-	"github.com/kogase/backend/models"
-	"github.com/kogase/backend/utils"
 	"gorm.io/gorm"
 )
 

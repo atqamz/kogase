@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kogase/backend/models"
-	"github.com/kogase/backend/utils"
+	"github.com/atqamz/kogase-backend/models"
+	"github.com/atqamz/kogase-backend/utils"
 	"github.com/stretchr/testify/assert"
 )
 

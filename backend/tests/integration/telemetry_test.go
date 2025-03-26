@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atqamz/kogase-backend/models"
 	"github.com/google/uuid"
-	"github.com/kogase/backend/models"
 	"github.com/stretchr/testify/assert"
 )
 

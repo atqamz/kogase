@@ -3,9 +3,9 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/atqamz/kogase-backend/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/kogase/backend/models"
 	"gorm.io/gorm"
 )
 

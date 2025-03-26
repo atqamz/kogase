@@ -7,11 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/atqamz/kogase-backend/config"
+	"github.com/atqamz/kogase-backend/controllers"
+	"github.com/atqamz/kogase-backend/middleware"
+	"github.com/atqamz/kogase-backend/models"
 	"github.com/gin-gonic/gin"
-	"github.com/kogase/backend/config"
-	"github.com/kogase/backend/controllers"
-	"github.com/kogase/backend/middleware"
-	"github.com/kogase/backend/models"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -95,6 +97,17 @@ func (s *Server) setupRoutes() {
 	// Global middleware
 	s.Router.Use(middleware.CORSMiddleware())
 
+	// Health check endpoint
+	s.Router.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"version": "1.0.0",
+		})
+	})
+
+	// Swagger documentation
+	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// Create controllers
 	authController := controllers.NewAuthController(s.DB)
 	projectController := controllers.NewProjectController(s.DB)
@@ -115,10 +128,15 @@ func (s *Server) setupRoutes() {
 	sdk := v1.Group("/sdk")
 	sdk.Use(middleware.APIKeyMiddleware(s.DB))
 	{
+		// Events
 		sdk.POST("/event", telemetryController.RecordEvent)
 		sdk.POST("/events", telemetryController.RecordEvents)
+
+		// Sessions
 		sdk.POST("/session/start", telemetryController.StartSession)
 		sdk.POST("/session/end", telemetryController.EndSession)
+
+		// Installation
 		sdk.POST("/installation", telemetryController.RecordInstallation)
 	}
 

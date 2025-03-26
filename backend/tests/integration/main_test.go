@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/atqamz/kogase-backend/config"
+	"github.com/atqamz/kogase-backend/models"
+	"github.com/atqamz/kogase-backend/server"
 	"github.com/gin-gonic/gin"
-	"github.com/kogase/backend/config"
-	"github.com/kogase/backend/models"
-	"github.com/kogase/backend/server"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

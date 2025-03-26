@@ -23,6 +23,20 @@ services:
     networks:
       - kogase-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8080/api/v1
+    depends_on:
+      - backend
+    networks:
+      - kogase-network
+
   postgres:
     image: postgres:17-alpine
     restart: always

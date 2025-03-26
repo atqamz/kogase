@@ -2,6 +2,24 @@
 
 Kogase is an open-source, self-hosted game analytics and telemetry platform. It provides a simple, yet powerful way to track and analyze player behavior in your games.
 
+## Quick Installation
+
+### One-line Installation (Recommended)
+
+**For Linux/macOS:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/atqamz/kogase/main/install-kogase.sh | bash
+```
+
+**For Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/atqamz/kogase/main/install.ps1 | iex
+```
+
+For more installation options and troubleshooting, see [INSTALL.md](INSTALL.md).
+
 ## Features
 
 - **Game Telemetry**: Track player actions, sessions, and custom events
@@ -32,17 +50,107 @@ Kogase is an open-source, self-hosted game analytics and telemetry platform. It 
    cd kogase
    ```
 
-2. Create a `.env` file based on the example:
-   ```
-   cp backend/.env.example backend/.env
+2. Run the setup script:
+
+   **On Linux/Mac**:
+   ```bash
+   chmod +x setup.sh
+   ./setup.sh
    ```
 
-3. Start the services:
-   ```
-   docker-compose up -d
+   **On Windows (PowerShell)**:
+   ```powershell
+   .\setup.ps1
    ```
 
-4. Access the API at `http://localhost:8080/api/v1`
+   This will:
+   - Create the .env file if it doesn't exist
+   - Build all Docker images
+   - Start all containers
+   - Display access URLs
+
+3. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8080/api/v1
+   - API Documentation: http://localhost:8080/swagger/index.html
+
+### Docker Compose Services
+
+The Docker Compose setup includes the following services:
+
+- **Backend**: Go API running on port 8080
+- **Frontend**: Next.js application running on port 3000
+- **Postgres**: PostgreSQL database running on port 5432
+
+### Docker Development
+
+To rebuild a specific service:
+
+```bash
+docker-compose build [service]
+```
+
+To restart a service:
+
+```bash
+docker-compose restart [service]
+```
+
+To view service logs:
+
+```bash
+docker-compose logs -f [service]
+```
+
+### Using the Makefile
+
+The repository includes a Makefile to simplify common Docker operations:
+
+```bash
+# Start all containers
+make up
+
+# Stop all containers
+make down
+
+# Show logs for all containers
+make logs
+
+# Show logs for a specific service
+make backend-logs
+make frontend-logs
+make db-logs
+
+# Rebuild and restart all containers
+make rebuild
+
+# Run health check
+make health
+
+# See all available commands
+make help
+```
+
+### Health Checks
+
+You can run a health check on the Docker containers using the following commands:
+
+**On Linux/Mac**:
+```bash
+chmod +x healthcheck.sh
+./healthcheck.sh
+```
+
+**On Windows (PowerShell)**:
+```powershell
+.\healthcheck.ps1
+```
+
+This will check:
+- If all services are running
+- If the backend API is responding
+- If the frontend is accessible
+- The resource usage of each container
 
 ### Running the Backend Locally
 
@@ -57,7 +165,21 @@ Kogase is an open-source, self-hosted game analytics and telemetry platform. It 
 
 ## API Documentation
 
-The API documentation is available at `/api/v1/docs` when the server is running.
+The API is documented using Swagger. When the server is running, access the interactive documentation at:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+You can explore all available endpoints and test them directly from the browser. The API supports two types of authentication:
+
+1. **JWT Tokens** - For dashboard and admin access
+   - Obtain a token via `/api/v1/auth/login`
+   - Use the token in the `Authorization` header: `Bearer your_token`
+
+2. **API Keys** - For SDK and game clients
+   - Generate an API key for your project in the dashboard
+   - Use the key in the `X-API-Key` header
 
 ## Project Structure
 
@@ -69,9 +191,14 @@ kogase/
 │   ├── models/         # Database models
 │   ├── server/         # Server configuration
 │   └── utils/          # Utility functions
-├── frontend/           # Frontend application (coming soon)
-├── unity-sdk/          # Unity SDK (coming soon)
-└── docker-compose.yaml # Docker Compose configuration
+├── frontend/           # Next.js frontend
+├── unity-sdk/          # Unity SDK
+├── docker-compose.yaml # Docker Compose configuration
+├── Makefile            # Commands for Docker operations
+├── setup.sh            # Setup script for Linux/Mac
+├── setup.ps1           # Setup script for Windows
+├── healthcheck.sh      # Health check script for Linux/Mac
+└── healthcheck.ps1     # Health check script for Windows
 ```
 
 ## License

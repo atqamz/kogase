@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atqamz/kogase-backend/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/kogase/backend/models"
 	"gorm.io/gorm"
 )
 
