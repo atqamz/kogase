@@ -1,0 +1,21 @@
+{
+  "name": "io.kogase.unitysdk",
+  "version": "0.1.0",
+  "displayName": "Kogase Unity SDK",
+  "description": "Unity SDK for Kogase Game Analytics and Telemetry",
+  "unity": "2020.3",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.0.2"
+  },
+  "keywords": [
+    "kogase",
+    "analytics",
+    "telemetry",
+    "gamedev"
+  ],
+  "author": {
+    "name": "Kogase Team",
+    "email": "info@kogase.io",
+    "url": "https://kogase.io"
+  }
+} 

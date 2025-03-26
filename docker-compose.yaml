@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=kogase
+      - DB_SSLMODE=disable
+      - GIN_MODE=release
+      - JWT_SECRET=${JWT_SECRET:-changeMe123!}
+      - JWT_EXPIRATION=24h
+    depends_on:
+      - postgres
+    networks:
+      - kogase-network
+
+  postgres:
+    image: postgres:17-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=kogase
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - kogase-network
+
+networks:
+  kogase-network:
+    driver: bridge
+
+volumes:
+  postgres-data: 
