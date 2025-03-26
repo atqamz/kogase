@@ -13,7 +13,7 @@ echo "
 ██║  ██╗╚██████╔╝╚██████╔╝██║  ██║███████║███████╗
 ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
                                                    
-Game Analytics & Telemetry
+Komu's Game Service
 "
 
 # Check if Git is installed

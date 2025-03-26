@@ -13,7 +13,7 @@ Write-Host @"
 ██║  ██╗╚██████╔╝╚██████╔╝██║  ██║███████║███████╗
 ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
                                                    
-Game Analytics & Telemetry
+Komu's Game Service
 "@ -ForegroundColor Cyan
 
 # Check if Git is installed
