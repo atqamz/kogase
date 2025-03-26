@@ -1,0 +1,26 @@
+accelbyte-unity-sdk
+
+# Environment variables
+.env
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-*
+
+# Temp files
+*.tmp
+*.swp
+*~
