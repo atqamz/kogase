@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/kogase/backend/models"
+	"github.com/kogase/backend/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -127,7 +128,7 @@ func TestLoginUser(t *testing.T) {
 	// Create a test user
 	// First, hash the password
 	password := "Password123"
-	hashedPassword, err := models.HashPassword(password)
+	hashedPassword, err := utils.HashPassword(password)
 	assert.NoError(t, err)
 
 	// Then, create the user
